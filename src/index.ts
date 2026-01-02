@@ -4,18 +4,27 @@ import cors from "cors";
 const app = express();
 
 /**
- * Configuração de CORS
- * - Permite frontend local
- * - Permite frontend no Vercel
+ * CORS dinâmico
+ * - Permite localhost
+ * - Permite QUALQUER domínio do Vercel
  */
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173",
-      "http://localhost:5174",
-      "http://localhost:5175",
-      "https://opp-frontend.vercel.app",
-    ],
+    origin: (origin, callback) => {
+      if (!origin) {
+        // permite chamadas como curl / server-to-server
+        return callback(null, true);
+      }
+
+      if (
+        origin.startsWith("http://localhost") ||
+        origin.endsWith(".vercel.app")
+      ) {
+        return callback(null, true);
+      }
+
+      return callback(new Error("Not allowed by CORS"));
+    },
     methods: ["GET"],
   })
 );
