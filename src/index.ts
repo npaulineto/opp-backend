@@ -1,7 +1,14 @@
-import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import { createClient } from "@supabase/supabase-js";
+
+/**
+ * Carrega .env SOMENTE em ambiente local
+ */
+if (process.env.NODE_ENV !== "production") {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  require("dotenv").config();
+}
 
 const app = express();
 
@@ -39,20 +46,17 @@ if (!supabaseUrl || !supabaseServiceKey) {
 }
 
 /**
- * Cliente Supabase (backend)
+ * Cliente Supabase
  */
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 /**
- * Rota de saúde
+ * Rotas
  */
 app.get("/health", (req, res) => {
-  return res.json({ status: "ok" });
+  res.json({ status: "ok" });
 });
 
-/**
- * Rota financeira (dados reais do Supabase)
- */
 app.get("/finance", async (req, res) => {
   const { data, error } = await supabase
     .from("financial_summary")
@@ -62,17 +66,16 @@ app.get("/finance", async (req, res) => {
     .single();
 
   if (error) {
-    console.error("Erro ao buscar dados financeiros:", error);
+    console.error(error);
     return res.status(500).json({ error: "Erro ao buscar dados financeiros" });
   }
 
-  return res.json({
-    revenue: data.revenue,
-    expenses: data.expenses,
-    balance: data.balance,
-  });
+  res.json(data);
 });
 
+/**
+ * Porta (Render injeta automaticamente PORT)
+ */
 const PORT = process.env.PORT || 3333;
 
 app.listen(PORT, () => {
