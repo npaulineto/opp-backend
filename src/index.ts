@@ -2,7 +2,9 @@ import "dotenv/config";
 
 import express from "express";
 import cors from "cors";
-import path from "path";
+
+import authRoutes from "./routes/auth.routes";
+import financeRoutes from "./routes/finance.routes";
 
 const app = express();
 
@@ -25,17 +27,8 @@ app.options("*", cors());
 app.use(express.json());
 
 /**
- * 🔒 Rotas resolvidas a partir da RAIZ do projeto
- * (compatível com ts-node-dev no Render)
+ * Rotas
  */
-const authRoutes = require(
-  path.resolve(process.cwd(), "src", "routes", "auth.routes")
-).default;
-
-const financeRoutes = require(
-  path.resolve(process.cwd(), "src", "routes", "finance.routes")
-).default;
-
 app.use("/auth", authRoutes);
 app.use("/finance", financeRoutes);
 
