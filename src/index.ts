@@ -1,103 +1,49 @@
 import express from "express";
 import cors from "cors";
-import { createClient } from "@supabase/supabase-js";
-
-/* =========================
-   DOTENV (SOMENTE LOCAL)
-========================= */
-if (process.env.NODE_ENV !== "production") {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  require("dotenv").config();
-}
+import authRoutes from "./routes/auth.routes";
+import financeRoutes from "./routes/finance.routes";
 
 const app = express();
 
-app.use(cors());
+/**
+ * CORS GLOBAL — precisa vir ANTES das rotas
+ */
+app.use(
+  cors({
+    origin: [
+      "http://localhost:5173",
+      "http://localhost:3000",
+      "https://opp-backend-8nlo.onrender.com",
+      // coloque aqui a URL do seu frontend no Vercel
+    ],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
+  })
+);
+
+/**
+ * Permite explicitamente requisições OPTIONS (preflight)
+ */
+app.options("*", cors());
+
 app.use(express.json());
 
-const PORT = process.env.PORT || 3333;
+/**
+ * Rotas
+ */
+app.use("/auth", authRoutes);
+app.use("/finance", financeRoutes);
 
-/* =========================
-   SUPABASE CONFIG
-========================= */
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error("Variáveis do Supabase não configuradas");
-}
-
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
-/* =========================
-   HEALTH CHECK
-========================= */
+/**
+ * Health check
+ */
 app.get("/health", (_req, res) => {
   res.json({ status: "ok" });
 });
 
-/* =========================
-   AUTH LOGIN
-========================= */
-app.post("/auth/login", async (req, res) => {
-  const { email, password } = req.body;
+const PORT = process.env.PORT || 3333;
 
-  if (!email || !password) {
-    return res.status(400).json({ error: "Email e senha obrigatórios" });
-  }
-
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
-
-  if (error || !data.session) {
-    return res.status(401).json({ error: "Credenciais inválidas" });
-  }
-
-  return res.json({
-    accessToken: data.session.access_token,
-    user: {
-      id: data.user.id,
-      email: data.user.email,
-    },
-  });
-});
-
-/* =========================
-   FINANCE (PROTEGIDA)
-========================= */
-app.get("/finance", async (req, res) => {
-  const authHeader = req.headers.authorization;
-
-  if (!authHeader) {
-    return res.status(401).json({ error: "Token não informado" });
-  }
-
-  const token = authHeader.replace("Bearer ", "");
-
-  const { data: userData, error: userError } =
-    await supabase.auth.getUser(token);
-
-  if (userError || !userData.user) {
-    return res.status(401).json({ error: "Token inválido" });
-  }
-
-  const { data, error } = await supabase
-    .from("finance")
-    .select("*")
-    .limit(1);
-
-  if (error) {
-    return res.status(500).json({ error: "Erro ao buscar dados financeiros" });
-  }
-
-  return res.json(data[0]);
-});
-
-/* =========================
-   START SERVER
-========================= */
 app.listen(PORT, () => {
   console.log(`Servidor backend rodando na porta ${PORT}`);
 });
