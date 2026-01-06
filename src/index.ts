@@ -25,10 +25,16 @@ app.options("*", cors());
 app.use(express.json());
 
 /**
- * Rotas (RESOLVIDAS COM __dirname — compatível com Linux)
+ * 🔒 Rotas resolvidas a partir da RAIZ do projeto
+ * (compatível com ts-node-dev no Render)
  */
-const authRoutes = require(path.resolve(__dirname, "routes", "auth.routes")).default;
-const financeRoutes = require(path.resolve(__dirname, "routes", "finance.routes")).default;
+const authRoutes = require(
+  path.resolve(process.cwd(), "src", "routes", "auth.routes")
+).default;
+
+const financeRoutes = require(
+  path.resolve(process.cwd(), "src", "routes", "finance.routes")
+).default;
 
 app.use("/auth", authRoutes);
 app.use("/finance", financeRoutes);
